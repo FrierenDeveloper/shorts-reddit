@@ -55,13 +55,13 @@ final class VoicePicker implements AutoCloseable {
               scan(r);
             }
           });
-      a.button(
+      a.secondaryButton(
           role == 0 ? "Escuchar voz del narrador" : "Escuchar voz de opinión", () -> preview(r));
     }
     a.hint(
         "Piper ofrece voces neuronales que funcionan sin internet. Puedes elegir un motor distinto"
             + " para narración y opinión.");
-    a.button(
+    a.secondaryButton(
         "Instalar otra voz local",
         () -> {
           Intent web =

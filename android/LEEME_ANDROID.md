@@ -7,7 +7,7 @@ Aplicación nativa con narración, composición y exportación de video en el te
 1. Instala `ShortsReddit-Android.apk`. Si Android pregunta, autoriza al gestor de archivos que usas para instalar aplicaciones.
 2. Instala `Piper-Daniela-Argentina.apk` y `Piper-Claude-Mexico.apk`, incluidos en el paquete, para tener Daniela y Claude simultáneamente. Consulta `VOCES_ANDROID.md` para las alternativas.
 3. Si quieres añadir recursos propios, usa **Guiones → Añadir archivos** o importa un ZIP con carpetas `historias`, `imagenes`, `videos_fondo`, `musica` y `voces`. No necesitas importar la biblioteca del PC.
-4. En **Ajustes**, elige el motor y la voz para narrador y opinión, escucha las muestras y guarda. Daniela, Claude y Google pueden elegirse por separado para narrador y opinión.
+4. En **Ajustes**, elige el motor y la voz para narrador y opinión, escucha las muestras y guarda. Daniela, Claude y Google pueden elegirse por separado para narrador y opinión. En **Crear**, ajusta el ritmo sin cambiar la voz instalada.
 5. Prueba **Crear → Renderizar ejemplo sin conexión**. El resultado aparece en **Videos** y en `Movies/ShortsReddit`.
 
 El APK no contiene claves privadas, videos personales ni los modelos de escritorio. Las claves tampoco están en el ZIP de transferencia. Para usar IA, Pexels o Pixabay, introduce tus claves en Ajustes, o importa tus propios `config/llm.json` y `config/claves.json` con **Importar llm.json o claves.json**. Los ajustes quedan cifrados con Android Keystore. El ZIP exportado por la app tampoco contiene esos ajustes.
@@ -39,7 +39,7 @@ La app procesa cada video por separado. Límite de 180 segundos de narración po
 | Música | Archivos locales o composición instrumental local, atenuación al hablar y fundidos |
 | Biblioteca | Videos, descripciones, créditos, estados de publicación y exportación ZIP |
 | GPU NVIDIA / NVENC | Sustituidos por EGL/OpenGL y MediaCodec del teléfono |
-| Edge, Kokoro, XTTS y Chatterbox | Sustituidos por voces locales de Android o audio propio importado; no están portados los modelos originales ni la clonación de voces |
+| Edge, Kokoro, XTTS y Chatterbox | Sustituidos por voces locales de Android o audio propio importado; no están portados los modelos originales ni la clonación de voces. Para voz neuronal local, instala y previsualiza Piper desde Ajustes |
 | Whisper / CLIP | No están integrados en esta edición. Los filtros de recursos usan texto y metadatos; no clasifican personas mediante un modelo visual |
 | Portadas y doodles | Portada de título/pregunta y dibujo sencillo; no reproduce todos los dibujos semánticos del escritorio |
 

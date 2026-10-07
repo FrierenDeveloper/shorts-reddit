@@ -4,6 +4,8 @@ import android.app.*;
 import android.content.*;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.os.*;
 import android.provider.OpenableColumns;
@@ -20,11 +22,15 @@ public final class MainActivity extends Activity {
   final int BG = Color.rgb(17, 29, 27),
       INK = Color.rgb(235, 239, 229),
       SAGE = Color.rgb(169, 213, 190),
-      MUTED = Color.rgb(172, 188, 179);
+      MUTED = Color.rgb(172, 188, 179),
+      PANEL = Color.rgb(27, 43, 39),
+      PANEL_EDGE = Color.rgb(54, 76, 68);
   LinearLayout page;
   TextView status, log;
   ProgressBar progress;
+  Button cancelButton;
   Spinner category, template, source;
+  Spinner speechRate;
   EditText input, volume;
   CheckBox satisfactory;
   Map<String, CheckBox> extras = new LinkedHashMap<>();
@@ -93,8 +99,25 @@ public final class MainActivity extends Activity {
     return v;
   }
 
+  GradientDrawable shape(int color, int stroke, int radius) {
+    GradientDrawable d = new GradientDrawable();
+    d.setColor(color);
+    d.setCornerRadius(dp(radius));
+    if (stroke != 0) d.setStroke(dp(1), stroke);
+    return d;
+  }
+
+  RippleDrawable ripple(int fill, int radius) {
+    return new RippleDrawable(
+        android.content.res.ColorStateList.valueOf(Color.argb(45, 255, 255, 255)),
+        shape(fill, 0, radius),
+        null);
+  }
+
   void title(String s) {
-    page.addView(label(s, 23, INK));
+    TextView v = label(s, 23, INK);
+    v.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+    page.addView(v);
   }
 
   void hint(String s) {
@@ -105,10 +128,23 @@ public final class MainActivity extends Activity {
     Button b = new Button(this);
     b.setText(s);
     b.setTextColor(BG);
-    b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(SAGE));
+    b.setBackground(ripple(SAGE, 14));
     b.setAllCaps(false);
     LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, dp(50));
-    p.setMargins(0, dp(6), 0, dp(6));
+    p.setMargins(0, dp(5), 0, dp(7));
+    page.addView(b, p);
+    b.setOnClickListener(v -> fn.run());
+    return b;
+  }
+
+  Button secondaryButton(String s, Runnable fn) {
+    Button b = new Button(this);
+    b.setText(s);
+    b.setTextColor(INK);
+    b.setBackground(ripple(PANEL, 14));
+    b.setAllCaps(false);
+    LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, dp(48));
+    p.setMargins(0, dp(4), 0, dp(4));
     page.addView(b, p);
     b.setOnClickListener(v -> fn.run());
     return b;
@@ -124,7 +160,13 @@ public final class MainActivity extends Activity {
     v.setMinLines(lines);
     v.setGravity(Gravity.TOP);
     v.setPadding(dp(12), dp(10), dp(12), dp(10));
-    v.setBackgroundTintList(android.content.res.ColorStateList.valueOf(SAGE));
+    GradientDrawable fieldBackground = shape(PANEL, PANEL_EDGE, 12);
+    v.setBackground(fieldBackground);
+    v.setOnFocusChangeListener(
+        (view, focused) -> {
+          fieldBackground.setStroke(dp(1), focused ? SAGE : PANEL_EDGE);
+          fieldBackground.invalidateSelf();
+        });
     v.setInputType(
         secret
             ? InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD
@@ -139,8 +181,28 @@ public final class MainActivity extends Activity {
   Spinner spinner(String label, String[] entries, int position) {
     page.addView(this.label(label, 14, MUTED));
     Spinner s = new Spinner(this);
+    s.setPadding(dp(10), 0, dp(10), 0);
+    // Keep the platform Spinner drawable so its dropdown affordance remains visible.
+    s.setBackgroundTintList(android.content.res.ColorStateList.valueOf(SAGE));
     ArrayAdapter<String> adapter =
-        new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, entries);
+        new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, entries) {
+          public View getView(int n, View recycled, android.view.ViewGroup parent) {
+            TextView item = (TextView) super.getView(n, recycled, parent);
+            item.setTextColor(INK);
+            item.setTextSize(15);
+            item.setPadding(dp(4), dp(8), dp(4), dp(8));
+            return item;
+          }
+
+          public View getDropDownView(int n, View recycled, android.view.ViewGroup parent) {
+            TextView item = (TextView) super.getDropDownView(n, recycled, parent);
+            item.setTextColor(INK);
+            item.setBackgroundColor(PANEL);
+            item.setPadding(dp(14), dp(12), dp(14), dp(12));
+            return item;
+          }
+        };
+    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
     s.setAdapter(adapter);
     s.setSelection(Math.max(0, Math.min(entries.length - 1, position)));
     page.addView(s, new LinearLayout.LayoutParams(-1, dp(48)));
@@ -152,6 +214,8 @@ public final class MainActivity extends Activity {
     c.setText(text);
     c.setTextColor(INK);
     c.setChecked(initial);
+    c.setMinHeight(dp(48));
+    c.setPadding(dp(4), 0, dp(4), 0);
     c.setButtonTintList(android.content.res.ColorStateList.valueOf(SAGE));
     page.addView(c);
     return c;
@@ -164,10 +228,10 @@ public final class MainActivity extends Activity {
       voicePicker = null;
     }
     tab = index;
-    ScrollView scroll = new ScrollView(this);
-    scroll.setFillViewport(true);
-    scroll.setBackgroundColor(BG);
-    scroll.setOnApplyWindowInsetsListener(
+    LinearLayout root = new LinearLayout(this);
+    root.setOrientation(LinearLayout.VERTICAL);
+    root.setBackgroundColor(BG);
+    root.setOnApplyWindowInsetsListener(
         (view, insets) -> {
           view.setPadding(
               insets.getSystemWindowInsetLeft(),
@@ -176,28 +240,35 @@ public final class MainActivity extends Activity {
               insets.getSystemWindowInsetBottom());
           return insets.consumeSystemWindowInsets();
         });
+    ScrollView scroll = new ScrollView(this);
+    scroll.setFillViewport(true);
+    scroll.setBackgroundColor(BG);
     page = new LinearLayout(this);
     page.setOrientation(LinearLayout.VERTICAL);
-    page.setPadding(dp(20), dp(22), dp(20), dp(32));
+    page.setPadding(dp(18), dp(12), dp(18), dp(20));
     scroll.addView(page);
-    setContentView(scroll);
+    root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+    setContentView(root);
     title("Shorts Reddit");
     hint("Crea tus videos en el teléfono");
     LinearLayout nav = new LinearLayout(this);
+    nav.setGravity(Gravity.CENTER_VERTICAL);
+    nav.setPadding(dp(7), dp(6), dp(7), dp(6));
+    nav.setBackground(shape(PANEL, PANEL_EDGE, 18));
     String[] names = {"Crear", "Guiones", "Videos", "Ajustes"};
     for (int i = 0; i < names.length; i++) {
       final int n = i;
       Button b = new Button(this);
       b.setText(names[i]);
-      b.setTextSize(12);
+      b.setTextSize(11);
       b.setAllCaps(false);
       b.setTextColor(index == i ? BG : INK);
-      b.setBackgroundTintList(
-          android.content.res.ColorStateList.valueOf(index == i ? SAGE : Color.rgb(40, 58, 52)));
-      nav.addView(b, new LinearLayout.LayoutParams(0, dp(48), 1));
+      b.setBackground(ripple(index == i ? SAGE : PANEL, 14));
+      LinearLayout.LayoutParams item = new LinearLayout.LayoutParams(0, dp(44), 1);
+      item.setMargins(dp(2), 0, dp(2), 0);
+      nav.addView(b, item);
       b.setOnClickListener(v -> show(n));
     }
-    page.addView(nav);
     input = null;
     category = null;
     template = null;
@@ -209,20 +280,49 @@ public final class MainActivity extends Activity {
     else if (index == 1) scriptsPage();
     else if (index == 2) videosPage();
     else settingsPage();
-    title("Trabajo actual");
-    status = label("Sin trabajos activos", 15, SAGE);
-    page.addView(status);
+    LinearLayout activityCard = new LinearLayout(this);
+    activityCard.setOrientation(LinearLayout.VERTICAL);
+    activityCard.setPadding(dp(14), dp(10), dp(14), dp(10));
+    activityCard.setBackground(shape(PANEL, PANEL_EDGE, 14));
+    LinearLayout.LayoutParams activityParams = new LinearLayout.LayoutParams(-1, -2);
+    activityParams.setMargins(dp(12), dp(6), dp(12), dp(6));
+    root.addView(activityCard, activityParams);
+    TextView activityTitle = label("ESTADO DEL PROYECTO", 11, MUTED);
+    activityTitle.setLetterSpacing(.08f);
+    activityCard.addView(activityTitle);
+    status = label("Listo para crear", 15, INK);
+    activityCard.addView(status);
     progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-    page.addView(progress, new LinearLayout.LayoutParams(-1, dp(8)));
+    progress.setProgressTintList(android.content.res.ColorStateList.valueOf(SAGE));
+    activityCard.addView(progress, new LinearLayout.LayoutParams(-1, dp(5)));
     log = label("", 13, MUTED);
-    log.setTextIsSelectable(true);
-    page.addView(log);
-    button(
-        "Cancelar trabajo",
-        () -> {
+    activityCard.addView(log);
+    Button details = new Button(this);
+    details.setText("Ver registro completo");
+    details.setTextSize(12);
+    details.setAllCaps(false);
+    details.setTextColor(SAGE);
+    details.setBackground(ripple(PANEL, 10));
+    activityCard.addView(details, new LinearLayout.LayoutParams(-2, dp(40)));
+    details.setOnClickListener(v -> showFullLog());
+    cancelButton = new Button(this);
+    cancelButton.setText("Cancelar trabajo");
+    cancelButton.setTextSize(13);
+    cancelButton.setAllCaps(false);
+    cancelButton.setTextColor(Color.rgb(255, 196, 186));
+    cancelButton.setBackground(ripple(Color.rgb(67, 43, 42), 12));
+    LinearLayout.LayoutParams cancelParams = new LinearLayout.LayoutParams(-1, dp(44));
+    cancelParams.setMargins(0, dp(4), 0, 0);
+    activityCard.addView(cancelButton, cancelParams);
+    cancelButton.setOnClickListener(
+        v -> {
           if (RenderService.running)
             startService(new Intent(this, RenderService.class).setAction(RenderService.CANCEL));
         });
+    LinearLayout.LayoutParams navParams = new LinearLayout.LayoutParams(-1, dp(60));
+    navParams.setMargins(dp(12), dp(4), dp(12), dp(8));
+    root.addView(nav, navParams);
+    nav.setElevation(dp(8));
     refreshStatus();
   }
 
@@ -239,10 +339,12 @@ public final class MainActivity extends Activity {
             draft.optString("input"),
             false,
             6);
+    input.setHint("Pega un enlace o escribe un tema o una historia…");
+    input.setHintTextColor(MUTED);
     hint(
         "Para texto sin IA, escribe el título en la primera línea y la narración debajo. Para"
             + " lotes de temas o enlaces, usa un elemento por línea.");
-    button(
+    secondaryButton(
         "Ideas para un tema",
         () -> {
           String[] ideas = {
@@ -264,6 +366,14 @@ public final class MainActivity extends Activity {
             "Plantilla",
             new String[] {"aleatoria", "clasica", "impacto", "noche", "diario", "pop", "tetrica"},
             draft.optInt("template", 0));
+    speechRate =
+        spinner(
+            "Ritmo de narración",
+            new String[] {"Pausado · 0.9×", "Natural · 1.0×", "Ágil · 1.05×", "Rápido · 1.1×"},
+            draft.optInt("speech_rate", 1));
+    hint(
+        "La calidad y el acento dependen de la voz instalada. En Ajustes puedes escuchar muestras"
+            + " y elegir una voz Piper neuronal.");
     satisfactory =
         check(
             "Fondos satisfactorios (clips online o locales)",
@@ -309,8 +419,8 @@ public final class MainActivity extends Activity {
             + " voz local elegida en Ajustes.");
     title("3 · Genera");
     button("Crear guion con IA y renderizar", () -> submit(false));
-    button("Convertir texto sin IA y renderizar", () -> submit(true));
-    button(
+    secondaryButton("Convertir texto sin IA y renderizar", () -> submit(true));
+    secondaryButton(
         "Renderizar ejemplo sin conexión",
         () -> {
           try {
@@ -331,6 +441,11 @@ public final class MainActivity extends Activity {
           .put("input", input.getText().toString())
           .put("category", category.getSelectedItemPosition())
           .put("template", template.getSelectedItemPosition())
+          .put(
+              "speech_rate",
+              speechRate == null
+                  ? draft.optInt("speech_rate", 1)
+                  : speechRate.getSelectedItemPosition())
           .put("source", source.getSelectedItemPosition())
           .put("satisfactory", satisfactory.isChecked())
           .put("volume", volume.getText().toString());
@@ -347,6 +462,9 @@ public final class MainActivity extends Activity {
     return new JSONObject()
         .put("plantilla", template.getSelectedItem().toString())
         .put("motor_voz", "android")
+        .put(
+            "velocidad_android",
+            new double[] {.9, 1.0, 1.05, 1.1}[speechRate.getSelectedItemPosition()])
         .put("volumen_musica", Double.parseDouble(volume.getText().toString()))
         .put("fondo_satisfactorio", satisfactory.isChecked())
         .put("fuente_videos", source.getSelectedItem().toString())
@@ -389,21 +507,24 @@ public final class MainActivity extends Activity {
 
   void scriptsPage() {
     title("Guiones y recursos");
-    button(
+    hint("Importa material o reutiliza un guion guardado.");
+    secondaryButton(
         "Importar guiones JSON",
         () -> pick("script", "application/json", "text/plain", "application/octet-stream"));
-    button(
+    secondaryButton(
         "Importar proyecto ZIP del PC",
         () -> pick("zip", "application/zip", "application/octet-stream"));
-    button("Añadir fotos", () -> pick("image", "image/*"));
-    button("Añadir videos de fondo", () -> pick("video", "video/*"));
-    button("Añadir música", () -> pick("music", "audio/*"));
-    button("Añadir narración propia", () -> pick("voice", "audio/*"));
+    secondaryButton("Añadir fotos", () -> pick("image", "image/*"));
+    secondaryButton("Añadir videos de fondo", () -> pick("video", "video/*"));
+    secondaryButton("Añadir música", () -> pick("music", "audio/*"));
+    secondaryButton("Añadir narración propia", () -> pick("voice", "audio/*"));
     hint(
         "Los guiones importados conservan sus opciones. Las rutas locales del JSON deben coincidir"
             + " con los archivos importados.");
     List<File> scripts = Store.list(this, "historias", ".json");
-    for (File f : scripts) button(f.getName(), () -> scriptActions(f));
+    title("Guiones guardados");
+    if (scripts.isEmpty()) hint("Aún no hay guiones. Importa un JSON o crea uno desde la pestaña Crear.");
+    for (File f : scripts) secondaryButton("▤  " + f.getName(), () -> scriptActions(f));
   }
 
   void scriptActions(File f) {
@@ -482,8 +603,8 @@ public final class MainActivity extends Activity {
     hint(
         "Los videos terminados también se copian a Movies/ShortsReddit. Desde aquí puedes verlos,"
             + " compartirlos y marcar los publicados.");
-    button("Exportar proyecto completo a ZIP", () -> exportProject());
-    button(
+    secondaryButton("Exportar proyecto completo a ZIP", () -> exportProject());
+    secondaryButton(
         "Limpiar caché temporal",
         () -> {
           if (RenderService.running) {
@@ -504,7 +625,7 @@ public final class MainActivity extends Activity {
           published = new JSONObject(Store.read(meta)).optBoolean("published", published);
       } catch (Exception ignored) {
       }
-      button((published ? "✓ " : "") + f.getName(), () -> videoActions(f));
+      secondaryButton((published ? "✓  " : "▶  ") + f.getName(), () -> videoActions(f));
     }
   }
 
@@ -631,7 +752,7 @@ public final class MainActivity extends Activity {
             settings.optBoolean("resolucion_720", false));
     VoicePicker picker = new VoicePicker(this, settings);
     voicePicker = picker;
-    button(
+    secondaryButton(
         "Instalar voces / ajustes de síntesis",
         () -> {
           try {
@@ -664,7 +785,7 @@ public final class MainActivity extends Activity {
             error(e);
           }
         });
-    button(
+    secondaryButton(
         "Importar llm.json o claves.json",
         () -> pick("config", "application/json", "text/plain", "application/octet-stream"));
     hint(
@@ -829,19 +950,32 @@ public final class MainActivity extends Activity {
     if (status == null) return;
     File file = new File(getFilesDir(), "status.json");
     if (!file.exists()) {
+      status.setText("Listo para crear");
+      log.setText("El progreso y los avisos aparecerán aquí.");
+      cancelButton.setVisibility(View.GONE);
       progress.setProgress(0);
+      progress.setIndeterminate(false);
       return;
     }
     try {
       JSONObject s = new JSONObject(Store.read(file));
       String msg = s.optString("status");
-      if (s.optBoolean("active")
+      boolean active = s.optBoolean("active");
+      if (active
           && !RenderService.running
           && System.currentTimeMillis() - s.optLong("updated") > 10000)
         msg = "Trabajo interrumpido. Puedes volver a renderizar su guion desde Guiones.";
       status.setText(msg);
-      log.setText(s.optString("log"));
-      progress.setIndeterminate(RenderService.running && !msg.startsWith("Render "));
+      String[] events = s.optString("log").trim().split("\n");
+      StringBuilder recent = new StringBuilder();
+      int first = Math.max(0, events.length - 2);
+      for (int i = first; i < events.length; i++) {
+        if (recent.length() > 0) recent.append('\n');
+        recent.append(events[i]);
+      }
+      log.setText(recent.length() == 0 ? "Sin actividad reciente." : recent.toString());
+      cancelButton.setVisibility(active && RenderService.running ? View.VISIBLE : View.GONE);
+      progress.setIndeterminate(active && !msg.startsWith("Render "));
       if (msg.matches("Render \\d+ %")) {
         progress.setIndeterminate(false);
         progress.setProgress(Integer.parseInt(msg.replaceAll("\\D", "")));
@@ -851,6 +985,26 @@ public final class MainActivity extends Activity {
       }
     } catch (Exception ignored) {
     }
+  }
+
+  void showFullLog() {
+    String contents = "Todavía no hay actividad.";
+    try {
+      File file = new File(getFilesDir(), "status.json");
+      if (file.exists()) contents = new JSONObject(Store.read(file)).optString("log", contents);
+    } catch (Exception e) {
+      contents = "No se pudo leer el registro: " + e.getMessage();
+    }
+    TextView detail = label(contents, 13, INK);
+    detail.setTextIsSelectable(true);
+    detail.setPadding(dp(14), dp(12), dp(14), dp(12));
+    ScrollView body = new ScrollView(this);
+    body.addView(detail);
+    new AlertDialog.Builder(this)
+        .setTitle("Registro del proyecto")
+        .setView(body)
+        .setPositiveButton("Cerrar", null)
+        .show();
   }
 
   void toast(String msg) {

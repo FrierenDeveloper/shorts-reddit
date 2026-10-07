@@ -138,6 +138,9 @@ final class Audio implements AutoCloseable {
         tts.setVoice(voice);
         String rate = cfg.optString("velocidad", "+6%").replace("%", "").replace("+", "");
         try {
+          double localRate = cfg.optDouble("velocidad_android", 1.0);
+          if (!Double.isFinite(localRate)) localRate = 1.0;
+          localRate = Math.max(.75, Math.min(1.25, localRate));
           tts.setSpeechRate(
               (float)
                   Math.max(
@@ -145,6 +148,7 @@ final class Audio implements AutoCloseable {
                       Math.min(
                           1.8,
                           (1 + Float.parseFloat(rate) / 100)
+                              * localRate
                               * Delivery.number(delivery, "velocidad", 1, .85, 1.15))));
         } catch (Exception ex) {
           tts.setSpeechRate(1.06f);

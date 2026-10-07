@@ -32,3 +32,7 @@ Se comprobó la generación de un guion JSON de 17 escenas, la síntesis local y
 La versión final incorpora el análisis contextual de interpretación y aplica velocidad, pausas, ganancia y énfasis por palabra. El APK final compila y su firma se verifica. La comprobación completa de ese nuevo flujo se interrumpió al desconectarse el USB; el usuario pidió terminar sin más pruebas en el teléfono. No se registra esa comprobación como aprobada. Las pruebas de voces Daniela/Claude y el render nativo anteriores sí finalizaron correctamente.
 
 La conexión por Wi-Fi no quedó configurada: al intentar conectar a la dirección del teléfono, no había un servicio ADB de red disponible. Requiere activar Depuración inalámbrica y emparejar, o habilitar el transporte TCP mientras el USB esté conectado. La app no depende de ADB ni del PC para trabajar.
+
+## Motor Kokoro opcional
+
+El APK del motor Sherpa ONNX se recompila con paquete independiente `com.shortsreddit.voice.kokoro`. La inspección del artefacto confirma el servicio TTS declarado por Sherpa, sus clases originales, bibliotecas ARM64, modelo `kokoro-multi-lang-v1_0`, datos eSpeak españoles, idioma de servicio `spa`, idioma del modelo `es` y SID predeterminado 28 (`ef_dora`). La biblioteca Sherpa ONNX 1.13.8 también cargó esos mismos pesos y opciones en CPU y produjo 80.002 muestras (3,33 s a 24 kHz). El APK queda firmado y verificable. ADB no detectó el teléfono en esta sesión, así que la integración del servicio Android y la reproducción desde la app siguen pendientes de prueba en un dispositivo.

@@ -33,6 +33,18 @@ p=root/'smali_classes2/com/k2fsa/sherpa/onnx/tts/engine/TtsEngine.smali'; s=p.re
 oldblock='    const-string v0, "eng"\n\n    sput-object v0, Lcom/k2fsa/sherpa/onnx/tts/engine/TtsEngine;->lang:Ljava/lang/String;\n\n    const-string v0, "zho"\n\n    sput-object v0, Lcom/k2fsa/sherpa/onnx/tts/engine/TtsEngine;->lang2:Ljava/lang/String;'
 newblock='    const-string v0, "spa"\n\n    sput-object v0, Lcom/k2fsa/sherpa/onnx/tts/engine/TtsEngine;->lang:Ljava/lang/String;\n\n    const-string v0, "eng"\n\n    sput-object v0, Lcom/k2fsa/sherpa/onnx/tts/engine/TtsEngine;->lang2:Ljava/lang/String;'
 assert oldblock in s; p.write_text(s.replace(oldblock,newblock))
+p=root/'smali_classes2/com/k2fsa/sherpa/onnx/tts/engine/TtsEngine.smali'; s=p.read_text()
+for old,new in [
+ ('const-string v1, "kokoro-multi-lang-v1_0/phone-zh.fst,kokoro-multi-lang-v1_0/date-zh.fst,kokoro-multi-lang-v1_0/number-zh.fst"','const-string v1, ""'),
+ ('const-string v0, "kokoro-multi-lang-v1_0/lexicon-us-en.txt,kokoro-multi-lang-v1_0/lexicon-zh.txt"','const-string v0, ""')]:
+ assert old in s; s=s.replace(old,new,1)
+p.write_text(s)
+p=root/'smali_classes2/com/k2fsa/sherpa/onnx/TtsKt.smali'; s=p.read_text()
+# The TTS service advertises the ISO-639-3 code `spa`; Kokoro's phonemizer needs ISO-639-1 `es`.
+# Force the model config's lang field instead of accepting its blank default.
+old='    const/16 v22, 0x0\n\n    const/16 v23, 0x0\n\n    const/16 v24, 0x0\n\n    const/16 v25, 0xe0\n\n    const/16 v26, 0x0\n\n    move-object/from16 v16, v3\n\n    move-object/from16 v20, p6'
+new='    const-string v22, "es"\n\n    const/16 v23, 0x0\n\n    const/16 v24, 0x0\n\n    const/16 v25, 0xc0\n\n    const/16 v26, 0x0\n\n    move-object/from16 v16, v3\n\n    move-object/from16 v20, p6'
+assert old in s; p.write_text(s.replace(old,new,1))
 p=root/'smali/PreferenceHelper.smali'; s=p.read_text(); start=s.index('.method public final getSid()I'); end=s.index('.end method',start); block=s[start:end]; assert 'const/4 v2, 0x0' in block; s=s[:start]+block.replace('const/4 v2, 0x0','const/16 v2, 0x1c',1)+s[end:]; p.write_text(s)
 PY
 java -jar "$APKTOOL" b -q --frame-path "$BUILD/apktool-framework" "$DECODED" -o "$BUILD/kokoro-patched-unsigned.apk"

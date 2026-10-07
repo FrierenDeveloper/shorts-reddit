@@ -1,0 +1,18 @@
+{
+  "api_key": "PEGA_AQUI_TU_API_KEY",
+  "voice_id": "PEGA_AQUI_EL_VOICE_ID",
+  "voice_ids": [
+    "K3TeN3ZVK8WnOeJ0NYqZ",
+    "hyKxCTlAqtnW188CgltM",
+    "Iq9IDbsAh0XiIAKtSuSg",
+    "uCQe5kObQIjtylU0HL3m"
+  ],
+  "voces": {
+    "misteriosa": {"id": "K3TeN3ZVK8WnOeJ0NYqZ", "nombre": "David"},
+    "calida": {"id": "hyKxCTlAqtnW188CgltM", "nombre": "Salva"},
+    "energetica": {"id": "Iq9IDbsAh0XiIAKtSuSg", "nombre": "Diego"},
+    "profesional": {"id": "uCQe5kObQIjtylU0HL3m", "nombre": "Brian C."}
+  },
+  "model_id": "eleven_multilingual_v2",
+  "output_format": "mp3_44100_128"
+}

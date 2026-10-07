@@ -1,0 +1,6 @@
+{
+  "_ayuda": "Copia este archivo como llm.json y pega tu clave de proveedor en api_key.",
+  "base_url": "https://api.deepseek.com",
+  "api_key": "PEGA_AQUI_TU_API_KEY",
+  "modelo": "deepseek-chat"
+}

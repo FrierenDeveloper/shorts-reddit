@@ -1,0 +1,36 @@
+/config/elevenlabs.json
+/config/gemini.json
+/config/llm.json
+/config/claves.json
+
+# Kit de revision (snapshot de 338 MB para diffs; se regenera con sincronizar.ps1)
+/.revision/
+
+# Android: private signing material and generated packages
+/android/.signing/
+/android/build/
+/entrega-android/
+
+# Local environments, models, personal media and generated data
+.venv*/
+__pycache__/
+*.py[cod]
+/app/modelos/
+/cache/
+/outputs/
+/historias/
+/posts/
+/salida/
+/musica/
+/voces/
+/videos_fondo/
+/imagenes/
+/config/*.json
+!/config/*.example.json
+!/config/*.ejemplo.json
+/links.txt
+/*.jpg
+/*.png
+*.log
+.env
+.env.*

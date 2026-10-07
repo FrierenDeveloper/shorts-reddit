@@ -1,0 +1,9 @@
+edge-tts>=7.0
+faster-whisper
+numpy
+pillow
+soundfile
+requests
+openai
+transformers
+gradio>=6

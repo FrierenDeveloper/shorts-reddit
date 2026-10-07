@@ -1,0 +1,16 @@
+{
+  "titulo": "Tu primer short en Android",
+  "descripcion": "Un ejemplo creado y renderizado en el teléfono.",
+  "categoria_video": "reddit",
+  "plantilla": "clasica",
+  "motor_voz": "android",
+  "velocidad": "+0%",
+  "volumen_musica": 0.7,
+  "escenas": [
+    {"texto": "Este video se genera en tu *teléfono*, con voz, música y subtítulos.", "pausa": 0.25},
+    {"texto": "Puedes importar tus guiones anteriores y elegir una *plantilla* diferente.", "pausa": 0.25},
+    {"texto": "Añade fotos o clips locales, revisa el resultado y *compártelo* desde la biblioteca.", "pausa": 0.25}
+  ],
+  "encuesta": ["ME GUSTA", "OTRO ESTILO"],
+  "extras": {"tarjeta": true, "barra": true, "karaoke": true, "encuesta": true, "sonidos": true, "zoom": true, "loop": true}
+}

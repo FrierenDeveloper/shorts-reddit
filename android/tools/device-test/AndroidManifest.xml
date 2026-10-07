@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.shortsreddit.mobile.tests" android:versionCode="1" android:versionName="1">
+    <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35" />
+    <application android:label="Shorts Reddit Device Checks" />
+    <instrumentation android:name="com.shortsreddit.mobile.DeviceChecks" android:targetPackage="com.shortsreddit.mobile" android:label="Checks de render local" />
+    <instrumentation android:name="com.shortsreddit.mobile.ProjectTransfer" android:targetPackage="com.shortsreddit.mobile" android:label="Transferencia USB local" />
+    <instrumentation android:name="com.shortsreddit.mobile.NetworkChecks" android:targetPackage="com.shortsreddit.mobile" android:label="Comprobación de APIs" />
+    <instrumentation android:name="com.shortsreddit.mobile.VoiceChecks" android:targetPackage="com.shortsreddit.mobile" android:label="Comprobación de voces" />
+</manifest>

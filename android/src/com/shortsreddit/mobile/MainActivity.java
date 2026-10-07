@@ -42,6 +42,8 @@ public final class MainActivity extends Activity {
   VoicePicker voicePicker;
   int tab = 0;
   JSONObject draft = new JSONObject();
+  JSONObject pendingSettings = new JSONObject();
+  final Runnable persistSettingsTask = () -> persistPendingSettings();
   final Runnable poll =
       new Runnable() {
         public void run() {
@@ -75,6 +77,7 @@ public final class MainActivity extends Activity {
 
   public void onPause() {
     handler.removeCallbacks(poll);
+    persistPendingSettings();
     saveDraft();
     super.onPause();
   }
@@ -241,6 +244,7 @@ public final class MainActivity extends Activity {
   }
 
   void show(int index) {
+    persistPendingSettings();
     saveDraft();
     View focused = getCurrentFocus();
     if (focused != null) {
@@ -788,6 +792,42 @@ public final class MainActivity extends Activity {
     }
   }
 
+  void watchSetting(String name, EditText field) {
+    field.addTextChangedListener(
+        new android.text.TextWatcher() {
+          public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+          public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+          public void afterTextChanged(android.text.Editable value) {
+            try {
+              pendingSettings.put(name, value.toString().trim());
+              handler.removeCallbacks(persistSettingsTask);
+              handler.postDelayed(persistSettingsTask, 400);
+            } catch (JSONException e) {
+              error(e);
+            }
+          }
+        });
+  }
+
+  void persistPendingSettings() {
+    if (pendingSettings.length() == 0) return;
+    handler.removeCallbacks(persistSettingsTask);
+    try {
+      JSONObject latest = Store.settings(this);
+      Iterator<String> names = pendingSettings.keys();
+      while (names.hasNext()) {
+        String name = names.next();
+        latest.put(name, pendingSettings.getString(name));
+      }
+      Store.settings(this, latest);
+      pendingSettings = new JSONObject();
+    } catch (Exception e) {
+      error(e);
+    }
+  }
+
   void settingsPage() {
     title("Configuración");
     JSONObject settings;
@@ -811,6 +851,12 @@ public final class MainActivity extends Activity {
         model = field("Modelo", settings.optString("modelo", "deepseek-chat"), false, 1),
         pexels = field("Clave de Pexels", settings.optString("pexels"), true, 1),
         pixabay = field("Clave de Pixabay", settings.optString("pixabay"), true, 1);
+    watchSetting("base_url", base);
+    watchSetting("api_key", key);
+    watchSetting("modelo", model);
+    watchSetting("pexels", pexels);
+    watchSetting("pixabay", pixabay);
+    hint("Las claves se guardan cifradas automáticamente mientras escribes.");
     CheckBox low =
         check(
             "Exportar a 720 × 1280 para ahorrar tiempo",
@@ -845,6 +891,8 @@ public final class MainActivity extends Activity {
                 .put("resolucion_720", low.isChecked());
             picker.save(settings);
             Store.settings(this, settings);
+            pendingSettings = new JSONObject();
+            handler.removeCallbacks(persistSettingsTask);
             toast("Ajustes guardados");
           } catch (Exception e) {
             error(e);

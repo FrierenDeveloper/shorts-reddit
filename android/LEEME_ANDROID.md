@@ -1,6 +1,6 @@
 # Shorts Reddit para Android
 
-Aplicación nativa con narración, composición y exportación de video en el teléfono. **Versión 1.1.0 (versionCode 2).** No requiere un PC o un servidor para renderizar. Android 10 o posterior. Se entrega un APK firmado para instalación personal, junto con el código fuente y motores de voz opcionales. La entrega final no incluye la biblioteca antigua.
+Aplicación nativa con narración, composición y exportación de video en el teléfono. **Versión 1.1.1 (versionCode 3).** No requiere un PC o un servidor para renderizar. Android 10 o posterior. Se entrega un APK firmado para instalación personal, junto con el código fuente y motores de voz opcionales. La entrega final no incluye la biblioteca antigua.
 
 ## Instalación y transferencia
 

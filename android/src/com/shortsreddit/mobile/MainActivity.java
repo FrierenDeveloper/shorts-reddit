@@ -115,9 +115,11 @@ public final class MainActivity extends Activity {
   }
 
   void title(String s) {
-    TextView v = label(s, 23, INK);
+    TextView v = label(s, 20, SAGE);
     v.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
-    page.addView(v);
+    LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
+    p.setMargins(0, dp(12), 0, dp(3));
+    page.addView(v, p);
   }
 
   void hint(String s) {
@@ -128,12 +130,15 @@ public final class MainActivity extends Activity {
     Button b = new Button(this);
     b.setText(s);
     b.setTextColor(BG);
+    b.setTextSize(15);
     b.setBackground(ripple(SAGE, 14));
     b.setAllCaps(false);
-    LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, dp(50));
-    p.setMargins(0, dp(5), 0, dp(7));
+    b.setMinHeight(dp(52));
+    b.setPadding(dp(16), dp(8), dp(16), dp(8));
+    LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
+    p.setMargins(0, dp(6), 0, dp(8));
     page.addView(b, p);
-    b.setOnClickListener(v -> fn.run());
+    b.setOnClickListener(v -> runAction(fn));
     return b;
   }
 
@@ -141,13 +146,24 @@ public final class MainActivity extends Activity {
     Button b = new Button(this);
     b.setText(s);
     b.setTextColor(INK);
+    b.setTextSize(14);
     b.setBackground(ripple(PANEL, 14));
     b.setAllCaps(false);
-    LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, dp(48));
+    b.setMinHeight(dp(50));
+    b.setPadding(dp(16), dp(8), dp(16), dp(8));
+    LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
     p.setMargins(0, dp(4), 0, dp(4));
     page.addView(b, p);
-    b.setOnClickListener(v -> fn.run());
+    b.setOnClickListener(v -> runAction(fn));
     return b;
+  }
+
+  void runAction(Runnable action) {
+    try {
+      action.run();
+    } catch (RuntimeException e) {
+      error(e);
+    }
   }
 
   EditText field(String label, String initial, boolean secret, int lines) {
@@ -215,14 +231,23 @@ public final class MainActivity extends Activity {
     c.setTextColor(INK);
     c.setChecked(initial);
     c.setMinHeight(dp(48));
-    c.setPadding(dp(4), 0, dp(4), 0);
+    c.setPadding(dp(10), dp(4), dp(10), dp(4));
     c.setButtonTintList(android.content.res.ColorStateList.valueOf(SAGE));
-    page.addView(c);
+    c.setBackground(ripple(PANEL, 12));
+    LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
+    p.setMargins(0, dp(2), 0, dp(2));
+    page.addView(c, p);
     return c;
   }
 
   void show(int index) {
     saveDraft();
+    View focused = getCurrentFocus();
+    if (focused != null) {
+      ((android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE))
+          .hideSoftInputFromWindow(focused.getWindowToken(), 0);
+      focused.clearFocus();
+    }
     if (voicePicker != null) {
       voicePicker.close();
       voicePicker = null;
@@ -233,6 +258,12 @@ public final class MainActivity extends Activity {
     root.setBackgroundColor(BG);
     root.setOnApplyWindowInsetsListener(
         (view, insets) -> {
+          if (Build.VERSION.SDK_INT >= 30) {
+            android.graphics.Insets bars =
+                insets.getInsets(android.view.WindowInsets.Type.systemBars());
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            return insets;
+          }
           view.setPadding(
               insets.getSystemWindowInsetLeft(),
               insets.getSystemWindowInsetTop(),
@@ -240,34 +271,63 @@ public final class MainActivity extends Activity {
               insets.getSystemWindowInsetBottom());
           return insets.consumeSystemWindowInsets();
         });
+    LinearLayout appBar = new LinearLayout(this);
+    appBar.setGravity(Gravity.CENTER_VERTICAL);
+    appBar.setPadding(dp(18), dp(7), dp(18), dp(7));
+    TextView mark = label("S", 20, BG);
+    mark.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+    mark.setGravity(Gravity.CENTER);
+    mark.setBackground(shape(SAGE, 0, 13));
+    appBar.addView(mark, new LinearLayout.LayoutParams(dp(40), dp(40)));
+    LinearLayout brand = new LinearLayout(this);
+    brand.setOrientation(LinearLayout.VERTICAL);
+    brand.setPadding(dp(11), 0, 0, 0);
+    TextView appName = label("SHORTS REDDIT", 10, MUTED);
+    appName.setLetterSpacing(.12f);
+    appName.setPadding(0, 0, 0, 0);
+    TextView section =
+        label(new String[] {"Crear video", "Guiones", "Biblioteca", "Ajustes"}[index], 17, INK);
+    section.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+    section.setPadding(0, 0, 0, 0);
+    brand.addView(appName);
+    brand.addView(section);
+    appBar.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
+    TextView version = label("ANDROID  ·  1.1.0", 10, MUTED);
+    appBar.addView(version);
+    root.addView(appBar, new LinearLayout.LayoutParams(-1, dp(58)));
     ScrollView scroll = new ScrollView(this);
     scroll.setFillViewport(true);
     scroll.setBackgroundColor(BG);
     page = new LinearLayout(this);
     page.setOrientation(LinearLayout.VERTICAL);
-    page.setPadding(dp(18), dp(12), dp(18), dp(20));
+    page.setPadding(dp(20), dp(8), dp(20), dp(24));
     scroll.addView(page);
     root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
     setContentView(root);
-    title("Shorts Reddit");
-    hint("Crea tus videos en el teléfono");
     LinearLayout nav = new LinearLayout(this);
     nav.setGravity(Gravity.CENTER_VERTICAL);
-    nav.setPadding(dp(7), dp(6), dp(7), dp(6));
+    nav.setPadding(dp(6), dp(5), dp(6), dp(5));
     nav.setBackground(shape(PANEL, PANEL_EDGE, 18));
     String[] names = {"Crear", "Guiones", "Videos", "Ajustes"};
+    String[] icons = {"✚", "☷", "▶", "⚙"};
     for (int i = 0; i < names.length; i++) {
       final int n = i;
       Button b = new Button(this);
-      b.setText(names[i]);
+      b.setText(icons[i] + "\n" + names[i]);
+      b.setGravity(Gravity.CENTER);
       b.setTextSize(11);
       b.setAllCaps(false);
+      b.setMinWidth(0);
+      b.setMinHeight(0);
+      b.setPadding(dp(1), 0, dp(1), 0);
       b.setTextColor(index == i ? BG : INK);
-      b.setBackground(ripple(index == i ? SAGE : PANEL, 14));
-      LinearLayout.LayoutParams item = new LinearLayout.LayoutParams(0, dp(44), 1);
+      b.setBackground(ripple(index == i ? SAGE : PANEL, 15));
+      b.setSelected(index == i);
+      b.setContentDescription(names[i] + (index == i ? ", seleccionada" : ", pestaña"));
+      LinearLayout.LayoutParams item = new LinearLayout.LayoutParams(0, dp(52), 1);
       item.setMargins(dp(2), 0, dp(2), 0);
       nav.addView(b, item);
-      b.setOnClickListener(v -> show(n));
+      b.setOnClickListener(v -> runAction(() -> show(n)));
     }
     input = null;
     category = null;
@@ -291,9 +351,11 @@ public final class MainActivity extends Activity {
     activityTitle.setLetterSpacing(.08f);
     activityCard.addView(activityTitle);
     status = label("Listo para crear", 15, INK);
+    status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
     activityCard.addView(status);
     progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
     progress.setProgressTintList(android.content.res.ColorStateList.valueOf(SAGE));
+    progress.setContentDescription("Progreso del trabajo actual");
     activityCard.addView(progress, new LinearLayout.LayoutParams(-1, dp(5)));
     log = label("", 13, MUTED);
     activityCard.addView(log);
@@ -319,8 +381,8 @@ public final class MainActivity extends Activity {
           if (RenderService.running)
             startService(new Intent(this, RenderService.class).setAction(RenderService.CANCEL));
         });
-    LinearLayout.LayoutParams navParams = new LinearLayout.LayoutParams(-1, dp(60));
-    navParams.setMargins(dp(12), dp(4), dp(12), dp(8));
+    LinearLayout.LayoutParams navParams = new LinearLayout.LayoutParams(-1, dp(64));
+    navParams.setMargins(dp(12), dp(4), dp(12), dp(6));
     root.addView(nav, navParams);
     nav.setElevation(dp(8));
     refreshStatus();
@@ -380,10 +442,9 @@ public final class MainActivity extends Activity {
             draft.optBoolean("satisfactory", true));
     source =
         spinner("Banco de videos", new String[] {"pixabay", "pexels"}, draft.optInt("source", 0));
-    TextView pexels = label("Recursos de Pexels · pexels.com", 13, SAGE);
-    pexels.setOnClickListener(
-        v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.pexels.com/"))));
-    page.addView(pexels);
+    secondaryButton(
+        "Abrir Pexels · recursos y licencias",
+        () -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.pexels.com/"))));
     volume = field("Volumen de música (0 a 2)", draft.optString("volume", "0.7"), false, 1);
     volume.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
     String[][] options = {
@@ -465,10 +526,14 @@ public final class MainActivity extends Activity {
         .put(
             "velocidad_android",
             new double[] {.9, 1.0, 1.05, 1.1}[speechRate.getSelectedItemPosition()])
-        .put("volumen_musica", Double.parseDouble(volume.getText().toString()))
+        .put("volumen_musica", parseVolume(volume.getText().toString()))
         .put("fondo_satisfactorio", satisfactory.isChecked())
         .put("fuente_videos", source.getSelectedItem().toString())
         .put("extras", draft.getJSONObject("extras"));
+  }
+
+  double parseVolume(String value) {
+    return Double.parseDouble(value.trim().replace(',', '.'));
   }
 
   void submit(boolean plain) {
@@ -789,9 +854,10 @@ public final class MainActivity extends Activity {
         "Importar llm.json o claves.json",
         () -> pick("config", "application/json", "text/plain", "application/octet-stream"));
     hint(
-        "Esta edición sustituye Edge, Kokoro, XTTS y Chatterbox por TTS local de Android o"
-            + " narraciones importadas. No clona voces. Las marcas de karaoke son aproximadas si el"
-            + " motor no proporciona tiempos; puedes importar marcas exactas en el JSON.");
+        "Kokoro aparece como motor opcional después de instalar el APK de voz Kokoro Español."
+            + " Piper y los motores locales de Android funcionan sin internet. No se clonan voces."
+            + " El karaoke es aproximado si el motor no entrega marcas; también puedes importar"
+            + " marcas exactas en el JSON.");
   }
 
   void pick(String kind, String... mime) {
@@ -806,7 +872,11 @@ public final class MainActivity extends Activity {
             .addCategory(Intent.CATEGORY_OPENABLE)
             .putExtra(Intent.EXTRA_MIME_TYPES, mime)
             .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, !kind.equals("zip") && !kind.equals("config"));
-    startActivityForResult(intent, 20);
+    try {
+      startActivityForResult(intent, 20);
+    } catch (Exception e) {
+      error(e);
+    }
   }
 
   String filename(Uri uri) {
@@ -820,12 +890,16 @@ public final class MainActivity extends Activity {
   }
 
   void createDocument(String mime, String name) {
-    startActivityForResult(
-        new Intent(Intent.ACTION_CREATE_DOCUMENT)
-            .addCategory(Intent.CATEGORY_OPENABLE)
-            .setType(mime)
-            .putExtra(Intent.EXTRA_TITLE, name),
-        21);
+    try {
+      startActivityForResult(
+          new Intent(Intent.ACTION_CREATE_DOCUMENT)
+              .addCategory(Intent.CATEGORY_OPENABLE)
+              .setType(mime)
+              .putExtra(Intent.EXTRA_TITLE, name),
+          21);
+    } catch (Exception e) {
+      error(e);
+    }
   }
 
   void exportProject() {

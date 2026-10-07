@@ -1,14 +1,15 @@
 # Shorts Reddit para Android
 
-Aplicación nativa con narración, composición y exportación de video en el teléfono. No requiere un PC o un servidor para renderizar. Android 10 o posterior. Se entrega un APK firmado para instalación personal, junto con el código fuente y un instalador de voz local. La entrega final no incluye la biblioteca antigua.
+Aplicación nativa con narración, composición y exportación de video en el teléfono. **Versión 1.1.0 (versionCode 2).** No requiere un PC o un servidor para renderizar. Android 10 o posterior. Se entrega un APK firmado para instalación personal, junto con el código fuente y motores de voz opcionales. La entrega final no incluye la biblioteca antigua.
 
 ## Instalación y transferencia
 
 1. Instala `ShortsReddit-Android.apk`. Si Android pregunta, autoriza al gestor de archivos que usas para instalar aplicaciones.
-2. Instala `Piper-Daniela-Argentina.apk` y `Piper-Claude-Mexico.apk`, incluidos en el paquete, para tener Daniela y Claude simultáneamente. Consulta `VOCES_ANDROID.md` para las alternativas.
-3. Si quieres añadir recursos propios, usa **Guiones → Añadir archivos** o importa un ZIP con carpetas `historias`, `imagenes`, `videos_fondo`, `musica` y `voces`. No necesitas importar la biblioteca del PC.
-4. En **Ajustes**, elige el motor y la voz para narrador y opinión, escucha las muestras y guarda. Daniela, Claude y Google pueden elegirse por separado para narrador y opinión. En **Crear**, ajusta el ritmo sin cambiar la voz instalada.
-5. Prueba **Crear → Renderizar ejemplo sin conexión**. El resultado aparece en **Videos** y en `Movies/ShortsReddit`.
+2. Instala `Piper-Daniela-Argentina.apk` y `Piper-Claude-Mexico.apk`, incluidos en el paquete, para tener Daniela y Claude simultáneamente.
+3. Opcional: instala `ShortsReddit-Kokoro-Espanol.apk` para añadir Kokoro local con la voz española Dora. El instalador ocupa aproximadamente 364 MB. Consulta `VOCES_ANDROID.md` para conocer la voz y sus requisitos.
+4. Si quieres añadir recursos propios, usa **Guiones → Añadir archivos** o importa un ZIP con carpetas `historias`, `imagenes`, `videos_fondo`, `musica` y `voces`. No necesitas importar la biblioteca del PC.
+5. En **Ajustes**, elige el motor y la voz para narrador y opinión, escucha las muestras y guarda. Kokoro aparecerá al instalar su APK; Daniela, Claude y Google también pueden elegirse por separado para cada rol. En **Crear**, ajusta el ritmo sin cambiar la voz instalada.
+6. Prueba **Crear → Renderizar ejemplo sin conexión**. El resultado aparece en **Videos** y en `Movies/ShortsReddit`.
 
 El APK no contiene claves privadas, videos personales ni los modelos de escritorio. Las claves tampoco están en el ZIP de transferencia. Para usar IA, Pexels o Pixabay, introduce tus claves en Ajustes, o importa tus propios `config/llm.json` y `config/claves.json` con **Importar llm.json o claves.json**. Los ajustes quedan cifrados con Android Keystore. El ZIP exportado por la app tampoco contiene esos ajustes.
 
@@ -39,7 +40,8 @@ La app procesa cada video por separado. Límite de 180 segundos de narración po
 | Música | Archivos locales o composición instrumental local, atenuación al hablar y fundidos |
 | Biblioteca | Videos, descripciones, créditos, estados de publicación y exportación ZIP |
 | GPU NVIDIA / NVENC | Sustituidos por EGL/OpenGL y MediaCodec del teléfono |
-| Edge, Kokoro, XTTS y Chatterbox | Sustituidos por voces locales de Android o audio propio importado; no están portados los modelos originales ni la clonación de voces. Para voz neuronal local, instala y previsualiza Piper desde Ajustes |
+| Kokoro | Motor Sherpa ONNX opcional con Kokoro multilingüe v1.0, empaquetado por separado; voz española Dora, local y sin internet |
+| Edge, XTTS y Chatterbox | Sustituidos por voces locales de Android o audio propio importado; no están portados los modelos originales ni la clonación de voces |
 | Whisper / CLIP | No están integrados en esta edición. Los filtros de recursos usan texto y metadatos; no clasifican personas mediante un modelo visual |
 | Portadas y doodles | Portada de título/pregunta y dibujo sencillo; no reproduce todos los dibujos semánticos del escritorio |
 
@@ -85,12 +87,14 @@ La importación ZIP conserva archivos existentes. Si hay un archivo diferente co
 
 ## Compilar y empaquetar
 
-En Windows, con JDK 17, SDK de Android con plataforma 36 y Build Tools 35:
+En Linux o macOS, con JDK 17, SDK de Android con plataforma 36 y Build Tools 35:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File android/build.ps1
-powershell -ExecutionPolicy Bypass -File android/EMPAQUETAR.ps1
+```bash
+ANDROID_SDK_ROOT=/ruta/al/android-sdk ./android/build.sh
+ANDROID_SDK_ROOT=/ruta/al/android-sdk ./android/tools/build-kokoro-spanish.sh
 ```
+
+En Windows, compila la app principal con `android/build.ps1`. El adaptador de Kokoro usa Bash y Python 3; puedes ejecutarlo en Linux, macOS o WSL2 con `android/tools/build-kokoro-spanish.sh`. `EMPAQUETAR.ps1` prepara el ZIP de entrega.
 
 También puedes indicar `-AndroidSdk` y `-JavaHome`. El script reconoce `ANDROID_HOME` y `JAVA_HOME`. La compilación usa directamente las herramientas oficiales del SDK y no depende de Gradle ni de descargas de librerías.
 

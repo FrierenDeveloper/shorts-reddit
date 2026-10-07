@@ -59,8 +59,8 @@ final class VoicePicker implements AutoCloseable {
           role == 0 ? "Escuchar voz del narrador" : "Escuchar voz de opinión", () -> preview(r));
     }
     a.hint(
-        "Piper ofrece voces neuronales que funcionan sin internet. Puedes elegir un motor distinto"
-            + " para narración y opinión.");
+        "Piper y Kokoro ofrecen voces neuronales sin internet. Elige motores distintos para"
+            + " narrador y opinión; Kokoro requiere instalar su APK por separado.");
     a.secondaryButton(
         "Instalar otra voz local",
         () -> {
@@ -75,6 +75,7 @@ final class VoicePicker implements AutoCloseable {
 
   static String friendly(String id, String label) {
     String s = id.toLowerCase(Locale.ROOT);
+    if (s.contains("shortsreddit.voice.kokoro")) return "Kokoro · Español";
     if (s.contains("claude")) return "Piper · Claude · México";
     if (s.contains("daniela")) return "Piper · Daniela · Argentina";
     if (s.contains("sharvard")) return "Piper · Sharvard · España";

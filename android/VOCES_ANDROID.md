@@ -18,11 +18,18 @@ Se comprobó una narración con Daniela seguida de una opinión con Google; la v
 - **Piper Sharvard, España:** modelo medium, disponible en el catálogo oficial.
 - **Google:** opciones españolas descargables, diferentes según el dispositivo y la versión del motor. La app solo muestra voces locales que no requieren conexión.
 
+## Kokoro en Android (opcional)
+
+Instala `ShortsReddit-Kokoro-Espanol.apk` junto con la app para añadir un motor TTS Sherpa ONNX independiente. El APK usa el modelo Kokoro multilingüe v1.0 y queda configurado para español con la voz `ef_dora` (Dora). Después de instalarlo, abre **Ajustes** en Shorts Reddit, selecciona **Kokoro · Español** para narrador u opinión, previsualiza y guarda. La síntesis funciona sin internet; el APK del motor ocupa aproximadamente 364 MB y requiere unos 500 MB libres durante la instalación.
+
+La app principal no incorpora los pesos de Kokoro: se instala el motor aparte para mantener pequeño el APK principal y permitir que Kokoro y Piper coexistan. Las voces de opinión pueden usar otro motor Android.
+
 Los instaladores oficiales usan el mismo paquete. Para mantener las dos voces instaladas, el Claude incluido fue adaptado a `com.shortsreddit.voice.claude`: cambian la identidad de instalación, las autoridades de proveedores, los permisos propios y el nombre visible; el modelo, las bibliotecas y el DEX se conservan. Daniela conserva el APK oficial original. Puedes elegir Daniela y Claude de forma independiente, o combinarlos con Google. No se han integrado los modelos de clonación de voces del PC.
 
 ## Fuentes y licencias
 
 - [Catálogo oficial Sherpa ONNX](https://k2-fsa.github.io/sherpa/onnx/tts/apk-engine.html)
+- [Modelo Kokoro multilingüe v1.0](https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models): Apache 2.0; el proveedor Android adaptado conserva el modelo y sus bibliotecas.
 - [Modelo Daniela](https://huggingface.co/rhasspy/piper-voices/blob/main/es/es_AR/daniela/high/MODEL_CARD): ficha del conjunto de voz, CC BY-SA 4.0.
 - [Modelo Claude](https://huggingface.co/rhasspy/piper-voices/blob/main/es/es_MX/claude/high/MODEL_CARD): ficha del conjunto de voz, Apache 2.0.
 - [Motor Sherpa ONNX](https://github.com/k2-fsa/sherpa-onnx): Apache 2.0; incluye dependencias con sus licencias propias.

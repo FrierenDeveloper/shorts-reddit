@@ -1,6 +1,6 @@
 # Shorts Reddit para Android
 
-Aplicación nativa con narración, composición y exportación de video en el teléfono. **Versión 1.1.1 (versionCode 3).** No requiere un PC o un servidor para renderizar. Android 10 o posterior. Se entrega un APK firmado para instalación personal, junto con el código fuente y motores de voz opcionales. La entrega final no incluye la biblioteca antigua.
+Aplicación nativa con narración, composición y exportación de video en el teléfono. **Versión 1.1.2 (versionCode 4).** No requiere un PC o un servidor para renderizar. Android 10 o posterior. Se entrega un APK firmado para instalación personal, junto con el código fuente y motores de voz opcionales. La entrega final no incluye la biblioteca antigua.
 
 ## Instalación y transferencia
 
@@ -35,7 +35,7 @@ La app procesa cada video por separado. Límite de 180 segundos de narración po
 | Plantillas | Clásica, impacto, noche, diario, pop, tétrica y elección aleatoria; fuentes originales |
 | Fotos | Archivos locales y búsquedas Pexels, Pixabay, Openverse y Wikimedia Commons |
 | Clips | Fondos satisfactorios y clips temáticos de Pexels/Pixabay; biblioteca local |
-| Subtítulos | Texto visible y hablado separados, resaltados y karaoke; marcas del motor de voz o tiempos estimados |
+| Subtítulos | El karaoke sigue el texto realmente narrado; usa rangos por carácter del motor o estima tiempos cuando no están disponibles |
 | Extras | Tarjeta, progreso, encuesta, zoom, sonidos, aviso, etiqueta de opinión y cierre |
 | Música | Archivos locales o composición instrumental local, atenuación al hablar y fundidos |
 | Biblioteca | Videos, descripciones, créditos, estados de publicación y exportación ZIP |
@@ -81,7 +81,7 @@ Para tiempos exactos en audio propio, cada escena admite:
 ]
 ```
 
-Los tiempos son segundos desde el inicio del audio de esa escena. Sin marcas del motor o marcas importadas, la app estima la duración de cada palabra a partir de la duración real de la escena e indica que los tiempos son aproximados.
+Los tiempos son segundos desde el inicio del audio de esa escena. La app comprueba que las marcas importadas correspondan al texto narrado. Si el motor no entrega rangos por palabra, estima los tiempos sobre la duración real del audio e indica que son aproximados. Para audio importado con una narración distinta al texto, incluye marcas de palabra para sincronía exacta.
 
 La importación ZIP conserva archivos existentes. Si hay un archivo diferente con el mismo nombre, guarda una copia con prefijo `importado_` y adapta las referencias de los guiones importados. Los archivos idénticos se reutilizan.
 

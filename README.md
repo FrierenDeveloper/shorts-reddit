@@ -2,7 +2,7 @@
 
 ## Versión Android
 
-La adaptación nativa con render en el teléfono está en `android/`. La versión actual del APK es **1.1.1** (versionCode 3). Consulta `android/LEEME_ANDROID.md` para instalar, transferir los archivos y conocer las diferencias respecto al motor de PC. Incluye voces locales Daniela, Claude y Kokoro opcional, selección independiente de narrador/opinión y análisis contextual de emoción, suspenso, énfasis y pausas. Consulta `android/INTERPRETACION_VOZ.md` para el alcance de las órdenes. El APK y el paquete de entrega se generan en `entrega-android/` con los scripts de compilación de `android/`.
+La adaptación nativa con render en el teléfono está en `android/`. La versión actual del APK es **1.1.2** (versionCode 4). Consulta `android/LEEME_ANDROID.md` para instalar, transferir los archivos y conocer las diferencias respecto al motor de PC. Incluye voces locales Daniela, Claude y Kokoro opcional, selección independiente de narrador/opinión y análisis contextual de emoción, suspenso, énfasis y pausas. Consulta `android/INTERPRETACION_VOZ.md` para el alcance de las órdenes. El APK y el paquete de entrega se generan en `entrega-android/` con los scripts de compilación de `android/`.
 
 Los instaladores y el paquete completo se publican en las [releases del repositorio](https://github.com/FrierenDeveloper/shorts-reddit/releases). La entrega excluye la biblioteca antigua y las claves privadas.
 

@@ -234,7 +234,8 @@ final class Audio implements AutoCloseable {
               Math.max(0, Math.min(10, scene.json.optDouble("pausa", .25))));
       int silence = (int) (pause * SR);
       scene.b = scene.speechEnd + pause;
-      words(scene, spoken, ranges, originalRate);
+      boolean exactWords = words(scene, spoken, ranges, originalRate);
+      if (!exactWords) track.approximate = true;
       if (delivery != null && delivery.optJSONArray("recalcar") != null) {
         for (Word word : scene.words)
           if (word.highlight) {
@@ -244,8 +245,6 @@ final class Audio implements AutoCloseable {
               scene.pcm[sample] = (float) Math.max(-.98, Math.min(.98, scene.pcm[sample] * 1.08));
           }
       }
-      if (scene.json.optJSONArray("palabras") == null
-          && (ranges.isEmpty() || ranges.size() != scene.words.size())) track.approximate = true;
       pieces.add(scene.pcm);
       pieces.add(new float[silence]);
       total += scene.pcm.length + silence;
@@ -275,70 +274,145 @@ final class Audio implements AutoCloseable {
     return track;
   }
 
-  private void words(Scene scene, String spoken, List<int[]> ranges, int originalRate)
+  private boolean words(Scene scene, String spoken, List<int[]> ranges, int originalRate)
       throws Exception {
-    String visible = scene.json.getString("texto");
+    List<String> tokens = new ArrayList<>();
+    List<int[]> offsets = new ArrayList<>();
+    java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\S+").matcher(spoken);
+    while (matcher.find()) {
+      tokens.add(matcher.group());
+      offsets.add(new int[] {matcher.start(), matcher.end()});
+    }
+    if (tokens.isEmpty()) return false;
+
+    Set<String> emphasized = new HashSet<>();
     JSONObject delivery = scene.json.optJSONObject("interpretacion");
     JSONArray emphasis = delivery == null ? null : delivery.optJSONArray("recalcar");
     if (emphasis != null)
-      for (int i = 0; i < emphasis.length(); i++) {
-        String term = emphasis.optString(i);
-        if (!term.isEmpty())
-          visible =
-              visible.replaceAll(
-                  "(?iu)(?<![\\p{L}\\p{N}*])("
-                      + java.util.regex.Pattern.quote(term)
-                      + ")(?![\\p{L}\\p{N}*])",
-                  "*$1*");
-      }
-    List<String> tokens = new ArrayList<>();
-    List<Boolean> marks = new ArrayList<>();
-    boolean highlight = false;
+      for (int i = 0; i < emphasis.length(); i++)
+        for (String part : emphasis.optString(i).split("\\s+"))
+          if (!part.isEmpty()) emphasized.add(normalizeWord(part));
+    String visible = scene.json.optString("texto");
+    boolean marked = false;
     for (String token : visible.split("\\s+")) {
       int stars = 0;
-      for (int k = 0; k < token.length(); k++) if (token.charAt(k) == '*') stars++;
-      tokens.add(token.replace("*", ""));
-      marks.add(highlight || stars > 0);
-      if (stars % 2 == 1) highlight = !highlight;
+      for (int i = 0; i < token.length(); i++) if (token.charAt(i) == '*') stars++;
+      if (marked || stars > 0) emphasized.add(normalizeWord(token));
+      if (stars % 2 == 1) marked = !marked;
     }
+
     JSONArray explicit = scene.json.optJSONArray("palabras");
-    if (explicit != null) {
-      for (int i = 0; i < explicit.length(); i++) {
-        JSONObject w = explicit.getJSONObject(i);
-        double a = w.getDouble("inicio"), b = w.getDouble("fin");
-        if (!Double.isFinite(a)
-            || !Double.isFinite(b)
-            || a < 0
-            || b <= a
-            || b > scene.speechEnd - scene.a + .1)
-          throw new IOException("Marcas de palabras inválidas");
-        scene.words.add(
-            new Word(
-                w.getString("texto"), scene.a + a, scene.a + b, w.optBoolean("resalte", false)));
+    if (explicit != null && explicit.length() == tokens.size()) {
+      boolean sameText = true;
+      for (int i = 0; i < tokens.size(); i++)
+        if (!normalizeWord(tokens.get(i)).equals(normalizeWord(explicit.optJSONObject(i) == null
+                ? ""
+                : explicit.optJSONObject(i).optString("texto")))) {
+          sameText = false;
+          break;
+        }
+      if (sameText) {
+        for (int i = 0; i < explicit.length(); i++) {
+          JSONObject w = explicit.getJSONObject(i);
+          double a = w.getDouble("inicio"), b = w.getDouble("fin");
+          if (!Double.isFinite(a)
+              || !Double.isFinite(b)
+              || a < 0
+              || b <= a
+              || b > scene.speechEnd - scene.a + .1)
+            throw new IOException("Marcas de palabras inválidas");
+          scene.words.add(
+              new Word(tokens.get(i), scene.a + a, scene.a + b,
+                  w.optBoolean("resalte", false)
+                      || emphasized.contains(normalizeWord(tokens.get(i)))));
+        }
+        return true;
       }
-      return;
     }
-    List<double[]> boundaries = new ArrayList<>();
+
+    double length = scene.speechEnd - scene.a;
+    double[] starts = new double[tokens.size()];
+    Arrays.fill(starts, Double.NaN);
     synchronized (ranges) {
-      ranges.sort(Comparator.comparingInt(x -> x[2]));
-      for (int[] r : ranges)
-        if (r[2] >= 0) boundaries.add(new double[] {r[2] / (double) originalRate});
+      for (int[] range : ranges) {
+        if (range[2] < 0) continue;
+        for (int i = 0; i < offsets.size(); i++) {
+          int[] token = offsets.get(i);
+          if (range[0] >= token[1] || range[1] <= token[0]) continue;
+          double start = range[2] / (double) Math.max(1, originalRate);
+          if (start >= 0 && start < length && (Double.isNaN(starts[i]) || start < starts[i]))
+            starts[i] = start;
+          break;
+        }
+      }
     }
-    boolean exact = boundaries.size() == tokens.size();
-    double weight = 0;
-    for (String t : tokens) weight += Math.max(1, t.length());
-    double pos = 0, length = scene.speechEnd - scene.a;
+    for (int i = 1; i < starts.length; i++)
+      if (!Double.isNaN(starts[i]) && !Double.isNaN(starts[i - 1]) && starts[i] <= starts[i - 1])
+        starts[i] = Double.NaN;
+    int anchored = 0;
+    for (double start : starts) if (!Double.isNaN(start)) anchored++;
+    boolean exact = anchored == tokens.size();
+    double[] weights = new double[tokens.size()];
+    double totalWeight = 0;
     for (int i = 0; i < tokens.size(); i++) {
-      double start = exact ? Math.min(length, boundaries.get(i)[0]) : pos / weight * length;
-      pos += Math.max(1, tokens.get(i).length());
-      double end =
-          exact
-              ? (i + 1 < boundaries.size() ? Math.min(length, boundaries.get(i + 1)[0]) : length)
-              : pos / weight * length;
-      scene.words.add(
-          new Word(
-              tokens.get(i), scene.a + start, scene.a + Math.max(start + .01, end), marks.get(i)));
+      weights[i] = Math.max(1, normalizeWord(tokens.get(i)).length());
+      totalWeight += weights[i];
     }
+    if (anchored == 0) {
+      double elapsed = 0;
+      for (int i = 0; i < starts.length; i++) {
+        starts[i] = length * elapsed / totalWeight;
+        elapsed += weights[i];
+      }
+    } else {
+      int previous = -1;
+      for (int i = 0; i < starts.length; i++) {
+        if (Double.isNaN(starts[i])) continue;
+        if (previous >= 0) {
+          double left = starts[previous], right = Math.max(left, starts[i]);
+          double between = 0;
+          for (int j = previous + 1; j < i; j++) between += weights[j];
+          double passed = 0;
+          for (int j = previous + 1; j < i; j++) {
+            passed += weights[j];
+            starts[j] = left + (right - left) * passed / between;
+          }
+          starts[i] = right;
+        } else if (i > 0) {
+          double before = 0;
+          for (int j = 0; j < i; j++) before += weights[j];
+          double passed = 0;
+          for (int j = 0; j < i; j++) {
+            passed += weights[j];
+            starts[j] = starts[i] * passed / before;
+          }
+        }
+        previous = i;
+      }
+      if (previous < starts.length - 1) {
+        double left = starts[previous], remaining = 0;
+        for (int j = previous + 1; j < starts.length; j++) remaining += weights[j];
+        double passed = 0;
+        for (int j = previous + 1; j < starts.length; j++) {
+          passed += weights[j];
+          starts[j] = left + (length - left) * passed / remaining;
+        }
+      }
+    }
+    for (int i = 0; i < tokens.size(); i++) {
+      double start = Math.max(0, Math.min(length, starts[i]));
+      if (i > 0) start = Math.max(start, scene.words.get(i - 1).b - scene.a);
+      start = Math.min(length, start);
+      double end = i + 1 < tokens.size() ? Math.max(start + .01, starts[i + 1]) : length;
+      scene.words.add(new Word(tokens.get(i), scene.a + start,
+          scene.a + Math.min(length, Math.max(start + .01, end)),
+          emphasized.contains(normalizeWord(tokens.get(i)))));
+    }
+    return exact;
+  }
+
+  private static String normalizeWord(String text) {
+    return text.toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}\\p{N}]", "");
   }
 
   private void mix(Track track, JSONObject cfg) throws Exception {
